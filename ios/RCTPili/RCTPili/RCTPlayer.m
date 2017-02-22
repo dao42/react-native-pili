@@ -39,7 +39,7 @@ static NSString *status[] = {
         [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
          self.reconnectCount = 0;
     }
-    
+
     return self;
 };
 
@@ -47,12 +47,12 @@ static NSString *status[] = {
 {
     NSString *uri = source[@"uri"];
     bool backgroundPlay = source[@"backgroundPlay"] == nil ? false : source[@"backgroundPlay"];
-    
+
     PLPlayerOption *option = [PLPlayerOption defaultOption];
-    
+
     // 更改需要修改的 option 属性键所对应的值
     [option setOptionValue:@15 forKey:PLPlayerOptionKeyTimeoutIntervalForMediaPackets];
-    
+
     if(_plplayer){
         [_plplayer stop]; //TODO View 被卸载时 也要调用
     }
@@ -66,9 +66,9 @@ static NSString *status[] = {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(startPlayer) name:UIApplicationWillEnterForegroundNotification object:nil];
     }
     [self setupUI];
-    
+
     [self startPlayer];
-    
+
 }
 
 - (void)setupUI {
@@ -77,16 +77,16 @@ static NSString *status[] = {
         UIView *playerView = _plplayer.playerView;
         [self addSubview:playerView];
          [playerView setTranslatesAutoresizingMaskIntoConstraints:NO];
-        
+
         NSLayoutConstraint *centerX = [NSLayoutConstraint constraintWithItem:playerView attribute:NSLayoutAttributeCenterX relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeCenterX multiplier:1.0 constant:0];
         NSLayoutConstraint *centerY = [NSLayoutConstraint constraintWithItem:playerView attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeCenterY multiplier:1.0 constant:0];
         NSLayoutConstraint *width = [NSLayoutConstraint constraintWithItem:playerView attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeWidth multiplier:1.0 constant:0];
         NSLayoutConstraint *height = [NSLayoutConstraint constraintWithItem:playerView attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeHeight multiplier:1.0 constant:0];
-        
+
         NSArray *constraints = [NSArray arrayWithObjects:centerX, centerY,width,height, nil];
         [self addConstraints: constraints];
     }
-    
+
 }
 
 - (void) setStarted:(BOOL) started{
@@ -104,7 +104,7 @@ static NSString *status[] = {
 - (void) setMuted:(BOOL) muted {
     _muted = muted;
     [_plplayer setMute:muted];
-    
+
 }
 
 - (void)startPlayer {
@@ -139,7 +139,9 @@ static NSString *status[] = {
 }
 
 - (void)player:(nonnull PLPlayer *)player stoppedWithError:(nullable NSError *)error {
-    [self tryReconnect:error];
+    //[self tryReconnect:error];
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"宝石汇" message:[NSString stringWithFormat:@"主播不在家，去看看其他频道吧"] delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
+    [alert show];
 }
 
 - (void)tryReconnect:(nullable NSError *)error {
