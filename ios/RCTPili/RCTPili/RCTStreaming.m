@@ -51,7 +51,7 @@ const char *networkStatus[] = {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(reachabilityChanged:) name:kReachabilityChangedNotification object:nil];
         self.internetReachability = [Reachability reachabilityForInternetConnection];
         [self.internetReachability startNotifier];
-        
+
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(handleInterruption:)
                                                      name:AVAudioSessionInterruptionNotification
@@ -65,7 +65,7 @@ const char *networkStatus[] = {
         }
         self.sessionQueue = dispatch_queue_create("pili.queue.streaming", DISPATCH_QUEUE_SERIAL);
     }
-    
+
     return self;
 };
 
@@ -82,23 +82,23 @@ const char *networkStatus[] = {
 
 - (void) setSourceAndProfile{
     if(self.profile && self.rtmpURL){
-        
+
         void (^permissionBlock)(void) = ^{
             dispatch_async(self.sessionQueue, ^{
                 NSDictionary *video = self.profile[@"video"];
                 NSDictionary *audio = self.profile[@"audio"];
-                
+
                 int *fps = [video[@"fps"] integerValue];
                 int *bps = [video[@"bps"] integerValue];
                 int *maxFrameInterval = [video[@"maxFrameInterval"] integerValue];
                 //TODO
                 double height = 800;
                 double width = 640;
-                
+
                 //TODO videoProfileLevel 需要通过 分辨率 选择
-                
+
                 PLVideoStreamingConfiguration *videoStreamingConfiguration = [[PLVideoStreamingConfiguration alloc] initWithVideoSize:CGSizeMake(width, height) expectedSourceVideoFrameRate:fps videoMaxKeyframeInterval:maxFrameInterval averageVideoBitRate:bps videoProfileLevel:AVVideoProfileLevelH264Baseline31];
-                
+
                 PLVideoCaptureConfiguration *videoCaptureConfiguration = [PLVideoCaptureConfiguration defaultConfiguration];
 
                 PLAudioCaptureConfiguration *audioCaptureConfiguration = [PLAudioCaptureConfiguration defaultConfiguration];
@@ -108,7 +108,16 @@ const char *networkStatus[] = {
                 // 推流 session
                 self.session = [[PLCameraStreamingSession alloc] initWithVideoCaptureConfiguration:videoCaptureConfiguration audioCaptureConfiguration:audioCaptureConfiguration videoStreamingConfiguration:videoStreamingConfiguration audioStreamingConfiguration:audioStreamingConfiguration stream:nil videoOrientation:orientation];
                 self.session.delegate = self;
-                
+
+                // 开启美颜
+                [self.session setBeautifyModeOn:YES];
+                // 设置美颜程度 范围从 0 ~ 1，0 为不美颜，暂时设为1
+                [self.session setBeautify:1];
+                // 设置美白程度 范围是从 0 ~ 1，0 为不美白，暂时设为1
+                [self.session setWhiten:1];
+                // 红润的程度参数 范围是从 0 ~ 1，0 为不红润，暂时设为1
+                [self.session setRedden:1];
+
                 //            UIImage *waterMark = [UIImage imageNamed:@"qiniu.png"];
                 //            PLFilterHandler handler = [self.session addWaterMark:waterMark origin:CGPointMake(100, 300)];
                 //            self.filterHandlers = [@[handler] mutableCopy];//TODO -  水印暂时注释
@@ -116,27 +125,27 @@ const char *networkStatus[] = {
                     UIView *previewView = self.session.previewView;
                     [self addSubview:previewView];
                     [previewView setTranslatesAutoresizingMaskIntoConstraints:NO];
-                    
+
                     NSLayoutConstraint *centerX = [NSLayoutConstraint constraintWithItem:previewView attribute:NSLayoutAttributeCenterX relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeCenterX multiplier:1.0 constant:0];
                     NSLayoutConstraint *centerY = [NSLayoutConstraint constraintWithItem:previewView attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeCenterY multiplier:1.0 constant:0];
                     NSLayoutConstraint *width = [NSLayoutConstraint constraintWithItem:previewView attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeWidth multiplier:1.0 constant:0];
                     NSLayoutConstraint *height = [NSLayoutConstraint constraintWithItem:previewView attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationEqual toItem:self attribute:NSLayoutAttributeHeight multiplier:1.0 constant:0];
-                    
+
                     NSArray *constraints = [NSArray arrayWithObjects:centerX, centerY,width,height, nil];
                     [self addConstraints: constraints];
-                    
+
                     NSString *log = [NSString stringWithFormat:@"Zoom Range: [1..%.0f]", self.session.videoActiveFormat.videoMaxZoomFactor];
                     NSLog(@"%@", log);
-                    
+
                     if(_focus){
                         [self.session setSmoothAutoFocusEnabled:_focus];
                         [self.session setTouchToFocusEnable:_focus];
                     }
-                    
+
                     if(_muted){
                         [self setMuted:_muted];
                     }
-                    
+
                     [self startSession];
                 });
             });
@@ -149,7 +158,7 @@ const char *networkStatus[] = {
                                                       otherButtonTitles:nil];
             [alertView show];
         };
-        
+
         switch ([PLCameraStreamingSession cameraAuthorizationStatus]) {
             case PLAuthorizationStatusAuthorized:
                 permissionBlock();
@@ -202,7 +211,7 @@ const char *networkStatus[] = {
             [self.session toggleCamera];
         }
     }
-    
+
 }
 
 
@@ -243,7 +252,7 @@ const char *networkStatus[] = {
 - (void)cameraStreamingSession:(PLCameraStreamingSession *)session streamStateDidChange:(PLStreamState)state {
     NSString *log = [NSString stringWithFormat:@"Stream State: %s", stateNames[state]];
     NSLog(@"%@", log);
-    
+
     switch (state) {
         case PLStreamStateUnknow:
             [_eventDispatcher sendInputEventWithName:@"onLoading" body:@{@"target": self.reactTag}];
@@ -255,7 +264,7 @@ const char *networkStatus[] = {
             [_eventDispatcher sendInputEventWithName:@"onStreaming" body:@{@"target": self.reactTag}];
             break;
         case PLStreamStateDisconnecting:
-            
+
             break;
         case PLStreamStateDisconnected:
             [_eventDispatcher sendInputEventWithName:@"onDisconnected" body:@{@"target": self.reactTag}];
@@ -279,12 +288,12 @@ const char *networkStatus[] = {
     Reachability *curReach = [notif object];
     NSParameterAssert([curReach isKindOfClass:[Reachability class]]);
     NetworkStatus status = [curReach currentReachabilityStatus];
-    
+
     if (NotReachable == status) {
         // 对断网情况做处理
         [self stopSession];
     }
-    
+
     NSString *log = [NSString stringWithFormat:@"Networkt Status: %s", networkStatus[status]];
     NSLog(@"%@", log);
 }
@@ -292,7 +301,7 @@ const char *networkStatus[] = {
 - (void)handleInterruption:(NSNotification *)notification {
     if ([notification.name isEqualToString:AVAudioSessionInterruptionNotification]) {
         NSLog(@"Interruption notification");
-        
+
         if ([[notification.userInfo valueForKey:AVAudioSessionInterruptionTypeKey] isEqualToNumber:[NSNumber numberWithInt:AVAudioSessionInterruptionTypeBegan]]) {
             NSLog(@"InterruptionTypeBegan");
         } else {
