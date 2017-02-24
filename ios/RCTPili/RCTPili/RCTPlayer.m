@@ -117,12 +117,22 @@ static NSString *status[] = {
 
 - (void)player:(nonnull PLPlayer *)player statusDidChange:(PLPlayerStatus)state {
     switch (state) {
-        case PLPlayerStatusCaching:
+        case PLPlayerStatusCaching: {
+            UILabel *loadingLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 50, 300, 50)];
+            loadingLabel.textAlignment = UITextAlignmentCenter;
+            loadingLabel.textColor = [UIColor redColor];
+            loadingLabel.text = @"连接中...";
+            loadingLabel.tag = 100;
+            [self addSubview:loadingLabel];
             [_eventDispatcher sendInputEventWithName:@"onLoading" body:@{@"target": self.reactTag}];
             break;
-        case PLPlayerStatusPlaying:
+        }
+        case PLPlayerStatusPlaying: {
+            UIView *loadingView = [self viewWithTag:100];
+            [loadingView removeFromSuperview];
             [_eventDispatcher sendInputEventWithName:@"onPlaying" body:@{@"target": self.reactTag}];
             break;
+        }
         case PLPlayerStatusPaused:
             [_eventDispatcher sendInputEventWithName:@"onPaused" body:@{@"target": self.reactTag}];
             break;
@@ -140,8 +150,14 @@ static NSString *status[] = {
 
 - (void)player:(nonnull PLPlayer *)player stoppedWithError:(nullable NSError *)error {
     //[self tryReconnect:error];
-    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"宝石汇" message:[NSString stringWithFormat:@"主播不在家，去看看其他频道吧"] delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
-    [alert show];
+    UIView *loadingView = [self viewWithTag:100];
+    [loadingView removeFromSuperview];
+
+    UILabel *stopLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 50, 300, 50)];
+    stopLabel.textAlignment = UITextAlignmentCenter;
+    stopLabel.textColor = [UIColor redColor];
+    stopLabel.text = @"主播不在家，去看看其他频道吧";
+    [self addSubview:stopLabel];
 }
 
 - (void)tryReconnect:(nullable NSError *)error {
