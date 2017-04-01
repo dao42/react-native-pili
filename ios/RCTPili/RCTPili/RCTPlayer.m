@@ -118,7 +118,7 @@ static NSString *status[] = {
 - (void)player:(nonnull PLPlayer *)player statusDidChange:(PLPlayerStatus)state {
     switch (state) {
         case PLPlayerStatusCaching: {
-            UILabel *loadingLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 50, 300, 50)];
+            UILabel *loadingLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 225, self.frame.size.width, 50)];
             loadingLabel.textAlignment = UITextAlignmentCenter;
             loadingLabel.textColor = [UIColor redColor];
             loadingLabel.text = @"连接中...";
@@ -153,7 +153,7 @@ static NSString *status[] = {
     UIView *loadingView = [self viewWithTag:100];
     [loadingView removeFromSuperview];
 
-    UILabel *stopLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, 50, 300, 50)];
+    UILabel *stopLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 225, self.frame.size.width, 50)];
     stopLabel.textAlignment = UITextAlignmentCenter;
     stopLabel.textColor = [UIColor redColor];
     stopLabel.text = @"主播不在家，去看看其他频道吧";
