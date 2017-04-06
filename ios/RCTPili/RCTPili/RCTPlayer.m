@@ -51,7 +51,7 @@ static NSString *status[] = {
     PLPlayerOption *option = [PLPlayerOption defaultOption];
 
     // 更改需要修改的 option 属性键所对应的值
-    [option setOptionValue:@15 forKey:PLPlayerOptionKeyTimeoutIntervalForMediaPackets];
+    [option setOptionValue:@10 forKey:PLPlayerOptionKeyTimeoutIntervalForMediaPackets];
 
     if(_plplayer){
         [_plplayer stop]; //TODO View 被卸载时 也要调用
@@ -118,29 +118,29 @@ static NSString *status[] = {
 - (void)player:(nonnull PLPlayer *)player statusDidChange:(PLPlayerStatus)state {
     switch (state) {
         case PLPlayerStatusCaching: {
-            UILabel *loadingLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 75, self.frame.size.width, 50)];
-            loadingLabel.textAlignment = UITextAlignmentCenter;
-            loadingLabel.textColor = [UIColor redColor];
-            loadingLabel.text = @"连接中...";
-            loadingLabel.tag = 100;
-            [self addSubview:loadingLabel];
-            [_eventDispatcher sendInputEventWithName:@"onLoading" body:@{@"target": self.reactTag}];
+            // UILabel *loadingLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 75, self.frame.size.width, 50)];
+            // loadingLabel.textAlignment = UITextAlignmentCenter;
+            // loadingLabel.textColor = [UIColor redColor];
+            // loadingLabel.text = @"连接中...";
+            // loadingLabel.tag = 100;
+            // [self addSubview:loadingLabel];
+            [_eventDispatcher sendAppEventWithName:@"onLoading" body:@{@"target": self.reactTag}];
             break;
         }
         case PLPlayerStatusPlaying: {
-            UIView *loadingView = [self viewWithTag:100];
-            [loadingView removeFromSuperview];
-            [_eventDispatcher sendInputEventWithName:@"onPlaying" body:@{@"target": self.reactTag}];
+            // UIView *loadingView = [self viewWithTag:100];
+            // [loadingView removeFromSuperview];
+            [_eventDispatcher sendAppEventWithName:@"onPlaying" body:@{@"target": self.reactTag}];
             break;
         }
         case PLPlayerStatusPaused:
-            [_eventDispatcher sendInputEventWithName:@"onPaused" body:@{@"target": self.reactTag}];
+            [_eventDispatcher sendAppEventWithName:@"onPaused" body:@{@"target": self.reactTag}];
             break;
         case PLPlayerStatusStopped:
-            [_eventDispatcher sendInputEventWithName:@"onShutdown" body:@{@"target": self.reactTag}];
+            [_eventDispatcher sendAppEventWithName:@"onShutdown" body:@{@"target": self.reactTag}];
             break;
         case PLPlayerStatusError:
-            [_eventDispatcher sendInputEventWithName:@"onError" body:@{@"target": self.reactTag , @"errorCode": [NSNumber numberWithUnsignedInt:0]}];
+            [_eventDispatcher sendAppEventWithName:@"onError" body:@{@"target": self.reactTag , @"errorCode": [NSNumber numberWithUnsignedInt:0]}];
             break;
         default:
             break;
@@ -149,19 +149,20 @@ static NSString *status[] = {
 }
 
 - (void)player:(nonnull PLPlayer *)player stoppedWithError:(nullable NSError *)error {
-    //[self tryReconnect:error];
-    UIView *loadingView = [self viewWithTag:100];
-    [loadingView removeFromSuperview];
+    [self tryReconnect:error];
+    // UIView *loadingView = [self viewWithTag:100];
+    // [loadingView removeFromSuperview];
 
-    UILabel *stopLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 75, self.frame.size.width, 50)];
-    stopLabel.textAlignment = UITextAlignmentCenter;
-    stopLabel.textColor = [UIColor redColor];
-    stopLabel.text = @"主播不在家，去看看其他频道吧";
-    [self addSubview:stopLabel];
+    // UILabel *stopLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 75, self.frame.size.width, 50)];
+    // stopLabel.textAlignment = UITextAlignmentCenter;
+    // stopLabel.textColor = [UIColor redColor];
+    // stopLabel.text = @"主播不在家，去看看其他频道吧";
+    // [self addSubview:stopLabel];
+    [_eventDispatcher sendAppEventWithName:@"onError" body:@{@"target": self.reactTag}];
 }
 
 - (void)tryReconnect:(nullable NSError *)error {
-    if (self.reconnectCount < 3) {
+    if (self.reconnectCount < 1) {
         _reconnectCount ++;
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"错误" message:[NSString stringWithFormat:@"错误 %@，播放器将在%.1f秒后进行第 %d 次重连", error.localizedDescription,0.5 * pow(2, self.reconnectCount - 1), _reconnectCount] delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
         [alert show];
